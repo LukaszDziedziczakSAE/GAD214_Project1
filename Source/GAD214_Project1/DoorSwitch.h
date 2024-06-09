@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/StaticMeshComponent.h"
+#include "SlidingDoors.h"
 #include "DoorSwitch.generated.h"
 
 UCLASS()
@@ -23,4 +25,12 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	UStaticMeshComponent* Mesh;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	ASlidingDoors* Doors;
+
+	UFUNCTION(BlueprintCallable)
+	void Activate();
 };

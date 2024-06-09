@@ -9,6 +9,8 @@ ADoorSwitch::ADoorSwitch()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+	SetRootComponent(Mesh);
 }
 
 // Called when the game starts or when spawned
@@ -23,5 +25,13 @@ void ADoorSwitch::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void ADoorSwitch::Activate()
+{
+	if (Doors != nullptr)
+	{
+		Doors->ToggleDoor();
+	}
 }
 
