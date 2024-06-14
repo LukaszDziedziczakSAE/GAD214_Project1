@@ -73,4 +73,10 @@ public:
 
 	UFUNCTION()
 	float TimeSinceStart();
+
+	UFUNCTION(BlueprintCallable)
+	bool IsLocked();
+
+	UFUNCTION(BlueprintCallable)
+	bool IsOpenable();
 };

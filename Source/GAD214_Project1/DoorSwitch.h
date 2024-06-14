@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/PointLightComponent.h"
 #include "SlidingDoors.h"
 #include "DoorSwitch.generated.h"
 
@@ -28,9 +29,24 @@ public:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
 	UStaticMeshComponent* Mesh;
 
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	UStaticMeshComponent* Button;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	UPointLightComponent* LockedLight;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	UPointLightComponent* OpenLight;
+
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	ASlidingDoors* Doors;
 
 	UFUNCTION(BlueprintCallable)
 	void Activate();
+
+	UFUNCTION(BlueprintCallable)
+	bool IsLocked();
+
+	UFUNCTION(BlueprintCallable)
+	bool IsOpenable();
 };

@@ -11,6 +11,15 @@ ADoorSwitch::ADoorSwitch()
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	SetRootComponent(Mesh);
+
+	Button = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Button"));
+	Button->SetupAttachment(Mesh);
+
+	LockedLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("LockedLight"));
+	LockedLight->SetupAttachment(Mesh);
+
+	OpenLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("OpenLight"));
+	OpenLight->SetupAttachment(Mesh);
 }
 
 // Called when the game starts or when spawned
@@ -18,6 +27,17 @@ void ADoorSwitch::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	if (IsLocked())
+	{
+		OpenLight->SetVisibility(false);
+		LockedLight->SetVisibility(true);
+	}
+
+	if (IsOpenable())
+	{
+		LockedLight->SetVisibility(false);
+		OpenLight->SetVisibility(true);
+	}
 }
 
 // Called every frame
@@ -29,9 +49,27 @@ void ADoorSwitch::Tick(float DeltaTime)
 
 void ADoorSwitch::Activate()
 {
-	if (Doors != nullptr)
+	if (Doors != nullptr && Doors->IsOpenable())
 	{
 		Doors->ToggleDoor();
 	}
+}
+
+bool ADoorSwitch::IsLocked()
+{
+	if (Doors != nullptr)
+	{
+		return Doors->IsLocked();
+	}
+	return false;
+}
+
+bool ADoorSwitch::IsOpenable()
+{
+	if (Doors != nullptr)
+	{
+		return Doors->IsOpenable();
+	}
+	return false;
 }
 

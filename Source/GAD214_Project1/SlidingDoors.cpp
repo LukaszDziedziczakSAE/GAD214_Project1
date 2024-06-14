@@ -101,3 +101,13 @@ float ASlidingDoors::TimeSinceStart()
 	return UGameplayStatics::GetRealTimeSeconds(GetWorld()) - StartTime;
 }
 
+bool ASlidingDoors::IsLocked()
+{
+	return DoorMode == Mode::Offline || Locked;
+}
+
+bool ASlidingDoors::IsOpenable()
+{
+	return DoorMode != Mode::Offline && !Locked;
+}
+
