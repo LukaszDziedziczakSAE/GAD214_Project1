@@ -44,9 +44,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Activate();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintPure)
 	bool IsLocked();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintPure)
 	bool IsOpenable();
 };

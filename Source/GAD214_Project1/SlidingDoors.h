@@ -13,7 +13,9 @@ enum State
 	Open,
 	Closed,
 	Opening,
-	Closing
+	Closing,
+	Locking,
+	Unlocking
 };
 
 UENUM()
@@ -51,6 +53,12 @@ public:
 	UStaticMeshComponent* RightDoor;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	UStaticMeshComponent* CenterLock1;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	UStaticMeshComponent* CenterLock2;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
 	float OpenPosition;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
@@ -74,9 +82,12 @@ public:
 	UFUNCTION()
 	float TimeSinceStart();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintPure)
 	bool IsLocked();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintPure)
 	bool IsOpenable();
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	float LockingTime;
 };

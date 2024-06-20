@@ -18,6 +18,12 @@ ASlidingDoors::ASlidingDoors()
 
 	RightDoor = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Right Door"));
 	RightDoor->SetupAttachment(RootComp);
+
+	CenterLock1 = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Center Lock 1"));
+	CenterLock1->SetupAttachment(LeftDoor);
+
+	CenterLock2 = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Center Lock 2"));
+	CenterLock2->SetupAttachment(RightDoor);
 }
 
 // Called when the game starts or when spawned
@@ -41,10 +47,12 @@ void ASlidingDoors::Tick(float DeltaTime)
 
 	if (DoorState == State::Opening)
 	{
-		if (TimeSinceStart() > MovementTime)
+		if (TimeSinceStart() >= MovementTime)
 		{
 			LeftDoor->SetRelativeLocation(FVector(OpenPosition, 0, 0));
 			RightDoor->SetRelativeLocation(FVector(-OpenPosition, 0, 0));
+			CenterLock1->SetRelativeLocation(FVector(OpenPosition, 13, 112.5f));
+			CenterLock2->SetRelativeLocation(FVector(-OpenPosition, -3, 112.5f));
 			DoorState = State::Open;
 			UE_LOG(LogTemp, Warning, TEXT("Opened %s"), *GetName());
 		}
@@ -53,23 +61,65 @@ void ASlidingDoors::Tick(float DeltaTime)
 			float CurrentPosition = FMath::Lerp(0, OpenPosition, TimeSinceStart()/MovementTime);
 			LeftDoor->SetRelativeLocation(FVector(CurrentPosition, 0, 0));
 			RightDoor->SetRelativeLocation(FVector(-CurrentPosition, 0, 0));
+			CenterLock1->SetRelativeLocation(FVector(CurrentPosition, 13, 112.5f));
+			CenterLock2->SetRelativeLocation(FVector(-CurrentPosition, -3, 112.5f));
 		}
 	}
 
 	else if (DoorState == State::Closing)
 	{
-		if (TimeSinceStart() > MovementTime)
+		if (TimeSinceStart() >= MovementTime)
 		{
 			LeftDoor->SetRelativeLocation(FVector(0, 0, 0));
 			RightDoor->SetRelativeLocation(FVector(0, 0, 0));
-			DoorState = State::Closed;
-			UE_LOG(LogTemp, Warning, TEXT("Closed %s"), *GetName());
+			CenterLock1->SetRelativeLocation(FVector(0, 13, 112.5f));
+			CenterLock2->SetRelativeLocation(FVector(0, -3, 112.5f));
+			StartTime = UGameplayStatics::GetRealTimeSeconds(GetWorld());
+			DoorState = State::Locking;
 		}
 		else
 		{
 			float CurrentPosition = FMath::Lerp(OpenPosition, 0, TimeSinceStart() / MovementTime);
 			LeftDoor->SetRelativeLocation(FVector(CurrentPosition, 0, 0));
 			RightDoor->SetRelativeLocation(FVector(-CurrentPosition, 0, 0));
+			CenterLock1->SetRelativeLocation(FVector(CurrentPosition, 13, 112.5f));
+			CenterLock2->SetRelativeLocation(FVector(-CurrentPosition, -3, 112.5f));
+		}
+	}
+
+	else if (DoorState == State::Unlocking)
+	{
+		if (TimeSinceStart() >= LockingTime)
+		{
+			CenterLock1->SetRelativeRotation(FQuat::MakeFromEuler(FVector(0, 180, 180)));
+			CenterLock2->SetRelativeRotation(FQuat::MakeFromEuler(FVector(0, 180, 0)));
+			StartTime = UGameplayStatics::GetRealTimeSeconds(GetWorld());
+			DoorState = State::Opening;
+		}
+
+		else
+		{
+			float CurrentRotation = FMath::Lerp(0, 180, TimeSinceStart() / LockingTime);
+			CenterLock1->SetRelativeRotation(FQuat::MakeFromEuler(FVector(0, CurrentRotation, 180)));
+			CenterLock2->SetRelativeRotation(FQuat::MakeFromEuler(FVector(0, CurrentRotation, 0)));
+		}
+	}
+
+	else if (DoorState == State::Locking)
+	{
+		if (TimeSinceStart() >= LockingTime)
+		{
+			CenterLock1->SetRelativeRotation(FQuat::MakeFromEuler(FVector(0, 0, 180)));
+			CenterLock2->SetRelativeRotation(FQuat::MakeFromEuler(FVector(0, 0, 0)));
+			DoorState = State::Closed;
+			UE_LOG(LogTemp, Warning, TEXT("Closed %s"), *GetName());
+		}
+
+		else
+		{
+			float CurrentRotation = FMath::Lerp(180, 0, TimeSinceStart() / LockingTime);
+			CenterLock1->SetRelativeRotation(FQuat::MakeFromEuler(FVector(0, CurrentRotation, 180)));
+			CenterLock2->SetRelativeRotation(FQuat::MakeFromEuler(FVector(0, CurrentRotation, 0)));
 		}
 	}
 }
@@ -82,7 +132,8 @@ void ASlidingDoors::ToggleDoor()
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Opening %s"), *GetName());
 			StartTime = UGameplayStatics::GetRealTimeSeconds(GetWorld());
-			DoorState = State::Opening;
+			//DoorState = State::Opening;
+			DoorState = State::Unlocking;
 		}
 
 		else if (DoorState == State::Open)
@@ -90,6 +141,7 @@ void ASlidingDoors::ToggleDoor()
 			UE_LOG(LogTemp, Warning, TEXT("Closing %s"), *GetName());
 			StartTime = UGameplayStatics::GetRealTimeSeconds(GetWorld());
 			DoorState = State::Closing;
+			//DoorState = State::Locking;
 		}
 	}
 	
