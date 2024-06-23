@@ -13,6 +13,11 @@ ASlidingDoors::ASlidingDoors()
 	RootComp = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	SetRootComponent(RootComp);
 
+	DoorwayArea = CreateDefaultSubobject<UBoxComponent>(TEXT("Doorway Area"));
+	DoorwayArea->SetupAttachment(RootComp);
+	DoorwayArea->OnComponentBeginOverlap.AddDynamic(this, &ASlidingDoors::OnOverlapStart);
+	DoorwayArea->OnComponentEndOverlap.AddDynamic(this, &ASlidingDoors::OnOverlapEnd);
+
 	LeftDoor = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Left Door"));
 	LeftDoor->SetupAttachment(RootComp);
 
@@ -24,6 +29,14 @@ ASlidingDoors::ASlidingDoors()
 
 	CenterLock2 = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Center Lock 2"));
 	CenterLock2->SetupAttachment(RightDoor);
+
+	DoorAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("Door Audio"));
+	DoorAudio->SetupAttachment(RootComp);
+
+	LockAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("Lock Audio"));
+	LockAudio->SetupAttachment(RootComp);
+
+	ZeroOverlapTime = 0;
 }
 
 // Called when the game starts or when spawned
@@ -76,6 +89,7 @@ void ASlidingDoors::Tick(float DeltaTime)
 			CenterLock2->SetRelativeLocation(FVector(0, -3, 112.5f));
 			StartTime = UGameplayStatics::GetRealTimeSeconds(GetWorld());
 			DoorState = State::Locking;
+			PlayLockSound(DoorLock);
 		}
 		else
 		{
@@ -95,6 +109,7 @@ void ASlidingDoors::Tick(float DeltaTime)
 			CenterLock2->SetRelativeRotation(FQuat::MakeFromEuler(FVector(0, 180, 0)));
 			StartTime = UGameplayStatics::GetRealTimeSeconds(GetWorld());
 			DoorState = State::Opening;
+			PlayDoorSound(OpenSound);
 		}
 
 		else
@@ -122,11 +137,38 @@ void ASlidingDoors::Tick(float DeltaTime)
 			CenterLock2->SetRelativeRotation(FQuat::MakeFromEuler(FVector(0, CurrentRotation, 0)));
 		}
 	}
+
+	// Autoclose
+	if (AutoCloseTime > 0)
+	{
+		if (CurrentlyOverlapping > 0)
+		{
+			ZeroOverlapTime = 0;
+		}
+		else if (ZeroOverlapTime <= AutoCloseTime)
+		{
+			ZeroOverlapTime += DeltaTime;
+		}
+
+		if (DoorState == State::Open && OverlapTimeCloseTime())
+		{
+			ToggleDoor();
+		}
+	}
+
+	if (DoorMode == Mode::Automatic)
+	{
+		if (DoorState == State::Closed && CurrentlyOverlapping > 0)
+		{
+			ToggleDoor();
+		}
+	}
+	
 }
 
 void ASlidingDoors::ToggleDoor()
 {
-	if (DoorMode == Mode::Manual)
+	if (DoorMode != Mode::Offline)
 	{
 		if (DoorState == State::Closed)
 		{
@@ -134,6 +176,7 @@ void ASlidingDoors::ToggleDoor()
 			StartTime = UGameplayStatics::GetRealTimeSeconds(GetWorld());
 			//DoorState = State::Opening;
 			DoorState = State::Unlocking;
+			PlayLockSound(DoorLock);
 		}
 
 		else if (DoorState == State::Open)
@@ -142,6 +185,7 @@ void ASlidingDoors::ToggleDoor()
 			StartTime = UGameplayStatics::GetRealTimeSeconds(GetWorld());
 			DoorState = State::Closing;
 			//DoorState = State::Locking;
+			PlayDoorSound(CloseSound);
 		}
 	}
 	
@@ -161,5 +205,46 @@ bool ASlidingDoors::IsLocked()
 bool ASlidingDoors::IsOpenable()
 {
 	return DoorMode != Mode::Offline && !Locked;
+}
+
+void ASlidingDoors::PlayDoorSound(USoundBase* Sound)
+{
+	if (DoorAudio->IsPlaying()) DoorAudio->Stop();
+	DoorAudio->SetSound(Sound);
+	DoorAudio->Play();
+}
+
+void ASlidingDoors::PlayLockSound(USoundBase* Sound)
+{
+	if (LockAudio->IsPlaying()) LockAudio->Stop();
+	LockAudio->SetSound(Sound);
+	LockAudio->Play();
+}
+
+void ASlidingDoors::OnOverlapStart(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit)
+{
+	ACharacter* Character = (ACharacter*)OtherActor;
+	if (Character != nullptr)
+	{
+		CurrentlyOverlapping++;
+		UE_LOG(LogTemp, Warning, TEXT("Added Overlap %s"), *GetName());
+	}
+}
+
+void ASlidingDoors::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	ACharacter* Character = (ACharacter*)OtherActor;
+	if (Character != nullptr)
+	{
+		CurrentlyOverlapping--;
+		UE_LOG(LogTemp, Warning, TEXT("Removed Overlap %s"), *GetName());
+
+		if (CurrentlyOverlapping < 0) CurrentlyOverlapping = 0;
+	}
+}
+
+bool ASlidingDoors::OverlapTimeCloseTime()
+{
+	return (ZeroOverlapTime >= AutoCloseTime);
 }
 

@@ -9,6 +9,14 @@
 #include "SlidingDoors.h"
 #include "DoorSwitch.generated.h"
 
+UENUM()
+enum EButtonState
+{
+	Standby,
+	PressingIn,
+	PressingOut
+};
+
 UCLASS()
 class GAD214_PROJECT1_API ADoorSwitch : public AActor
 {
@@ -49,4 +57,35 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	bool IsOpenable();
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	UAudioComponent* Audio;
+
+	UFUNCTION()
+	void PlaySound(USoundBase* Sound);
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	USoundBase* ButtonPressSound;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	float MovementTime;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
+	TEnumAsByte<EButtonState> ButtonState;
+
+	UPROPERTY()
+	float StartTime;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	float OutY;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	float InY;
+
+	UFUNCTION()
+	float TimeSinceStart();
+
+	UFUNCTION()
+	void SetButtonPosition(float Position);
+
 };

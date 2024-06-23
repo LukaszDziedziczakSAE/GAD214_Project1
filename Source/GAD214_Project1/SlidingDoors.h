@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/AudioComponent.h"
 #include "SlidingDoors.generated.h"
 
 UENUM()
@@ -45,6 +47,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
 	USceneComponent* RootComp;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	UBoxComponent* DoorwayArea;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
 	UStaticMeshComponent* LeftDoor;
@@ -90,4 +95,42 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
 	float LockingTime;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	UAudioComponent* DoorAudio;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	UAudioComponent* LockAudio;
+
+	UFUNCTION()
+	void PlayDoorSound(USoundBase* Sound);
+
+	UFUNCTION()
+	void PlayLockSound(USoundBase* Sound);
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	USoundBase* OpenSound;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	USoundBase* CloseSound;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	USoundBase* DoorLock;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	float AutoCloseTime;
+
+	UFUNCTION()
+	void OnOverlapStart(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit);
+
+	UFUNCTION()
+	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
+	int CurrentlyOverlapping;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
+	float ZeroOverlapTime;
+
+	bool OverlapTimeCloseTime();
 };

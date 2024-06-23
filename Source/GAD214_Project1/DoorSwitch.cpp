@@ -2,6 +2,7 @@
 
 
 #include "DoorSwitch.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ADoorSwitch::ADoorSwitch()
@@ -20,6 +21,9 @@ ADoorSwitch::ADoorSwitch()
 
 	OpenLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("OpenLight"));
 	OpenLight->SetupAttachment(Mesh);
+
+	Audio = CreateDefaultSubobject<UAudioComponent>(TEXT("Lock Audio"));
+	Audio->SetupAttachment(Mesh);
 }
 
 // Called when the game starts or when spawned
@@ -45,13 +49,47 @@ void ADoorSwitch::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	switch (ButtonState)
+	{
+	case PressingIn:
+		if (TimeSinceStart() < MovementTime)
+		{
+			SetButtonPosition(FMath::Lerp(OutY, InY, TimeSinceStart() / MovementTime));
+		}
+		else
+		{
+			SetButtonPosition(InY);
+			ButtonState = PressingOut;
+			StartTime = UGameplayStatics::GetRealTimeSeconds(GetWorld());
+
+			Doors->ToggleDoor();
+		}
+		break;
+
+	case PressingOut:
+		if (TimeSinceStart() < MovementTime)
+		{
+			SetButtonPosition(FMath::Lerp(InY, OutY, TimeSinceStart() / MovementTime));
+		}
+		else
+		{
+			SetButtonPosition(OutY);
+			ButtonState = Standby;
+		}
+		break;
+	}
+
 }
 
 void ADoorSwitch::Activate()
 {
-	if (Doors != nullptr && Doors->IsOpenable())
+	if (Doors != nullptr && Doors->IsOpenable() && ButtonState == EButtonState::Standby)
 	{
-		Doors->ToggleDoor();
+
+		PlaySound(ButtonPressSound);
+		StartTime = UGameplayStatics::GetRealTimeSeconds(GetWorld());
+		ButtonState = EButtonState::PressingIn;
+		//Doors->ToggleDoor();
 	}
 }
 
@@ -71,5 +109,24 @@ bool ADoorSwitch::IsOpenable()
 		return Doors->IsOpenable();
 	}
 	return false;
+}
+
+void ADoorSwitch::PlaySound(USoundBase* Sound)
+{
+	if (Audio->IsPlaying()) Audio->Stop();
+	Audio->SetSound(Sound);
+	Audio->Play();
+}
+
+float ADoorSwitch::TimeSinceStart()
+{
+	return UGameplayStatics::GetRealTimeSeconds(GetWorld()) - StartTime;
+}
+
+void ADoorSwitch::SetButtonPosition(float Position)
+{
+	FVector ButtonPosition = Button->GetRelativeLocation();
+	ButtonPosition.Y = Position;
+	Button->SetRelativeLocation(ButtonPosition);
 }
 
